@@ -3,6 +3,7 @@
     "token": "",
     "server": 0,
     "mod_role": "",
+    "allowed_roles": [],
     "category_id": 0,
     "ticket_log_id": 0,
     "report_channel_id": 0

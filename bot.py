@@ -200,6 +200,13 @@ bot = MyClient()
 tree = app_commands.CommandTree(bot)
 commands = ModmailCommands()
 
+def check_is_allowed(member):
+    role_names = [y.name for y in member.roles]
+    for role in role_names:
+        if role in config.allowed_roles:
+            return True
+    return False
+
 def get_member_image(member):
     try:
         if member.guild_avatar:
@@ -410,6 +417,8 @@ async def on_message(message):
             await channel.send(embed=embed, files=files)
 
         if isinstance(message.channel, discord.TextChannel):
+            if not check_is_allowed(message.author):
+                return
             firstword = message.content.split(' ')[0]
             if firstword.startswith('='):
                 command = f'cmd_{firstword.replace("=", "")}'
