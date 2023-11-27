@@ -1,0 +1,6 @@
+logs/*
+config.json
+config.test.json
+modmail.db
+todo.yml
+__pycache__/*
