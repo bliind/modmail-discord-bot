@@ -416,7 +416,8 @@ async def on_message(message):
             files = await get_attachments(message)
             await channel.send(embed=embed, files=files)
 
-        if isinstance(message.channel, discord.TextChannel):
+        # if isinstance(message.channel, discord.TextChannel):
+        else:
             if not check_is_allowed(message.author):
                 return
             firstword = message.content.split(' ')[0]
