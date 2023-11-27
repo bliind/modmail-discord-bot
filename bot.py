@@ -51,6 +51,7 @@ class MyClient(discord.Client):
         self.server = [g for g in bot.guilds if g.id == config.server][0]
         for role in self.server.roles:
             if role.name == config.mod_role:
+                self.mod_role = role
                 self.mod_role_id = role.id
                 break
 
@@ -296,7 +297,7 @@ async def create_ticket_channel(user_name):
     server = [g for g in bot.guilds if g.id == config.server][0]
     overwrites = {
         server.default_role: discord.PermissionOverwrite(read_messages=False),
-        server.get_role(bot.mod_role_id): discord.PermissionOverwrite(read_messages=True)
+        server.get_role(bot.mod_role.id): discord.PermissionOverwrite(read_messages=True)
     }
 
     category = [c for c in server.categories if c.id == config.category_id][0]
@@ -352,7 +353,7 @@ async def make_initial_user_embed(user):
         description = f'{member.mention} was created <t:{created}:R>, joined <t:{joined}:R>, with {count} past threads.\n\n'
         description += '**Roles**\n'
         for role in member.roles:
-            description += f'<@{role.id}> '
+            description += f'{role.mention} '
     else:
         description = f'{member.mention} was created <t:{created}:R>, is not on the server, with {count} past threads.\n\n'
 
@@ -450,9 +451,7 @@ async def on_member_join(member):
 async def on_raw_reaction_add(payload):
     if payload.user_id == bot.user.id:
         return
-
     if payload.guild_id:
-        print('Not a DM')
         return
 
     ticket = db.get_ticket(payload.user_id)
@@ -541,7 +540,7 @@ async def report_message_command(interaction, message: discord.Message):
 
     report_chan = bot.get_channel(config.report_channel_id)
     report_view = ReportView(timeout=None)
-    report_message = await report_chan.send(embed=embed, view=report_view)
+    report_message = await report_chan.send(bot.mod_role.mention, embed=embed, view=report_view)
     await report_view.wait()
     if report_view.value:
         u = report_view.buttonpusher
