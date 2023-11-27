@@ -29,27 +29,7 @@
         </div>
 {% for message in messages %}
     {% if not message.content == '@here' %}
-    {% if not message.embeds %}
-        <div class="message internal hidden">
-            <img class="user-image" src="{{ message.author.avatar.url }}" alt="{{ message.author.name }}">
-            <div class="message-flex">
-                <div class="top-row">
-                    <div class="message-user">{{ message.author.name }}</div>
-                    <div class="timestamp">{{ message.created_at.strftime('%Y-%m-%d %H:%M:%S')}} UTC</div>
-                </div>
-                <div class="bottom-row">
-                    <div class="message-content">{{ message.content }}</div>
-                    {% for attachment in message.attachments %}
-                        {% if 'image' in attachment.content_type %}
-                        <img src="{{ attachment.url }}" alt="{{ attachment.filename }}">
-                        {% else %}
-                        <a href="{{ attachment.url }}">{{ attachment.filename }}</a>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    {% else %}
+    {% if message.embeds and message.embeds[0].type != "image" %}
         {% for emby in message.embeds %}
         <div class="message{% if emby.footer.text == 'Anonymous Reply' %} anonymous{%endif %}">
             <img class="user-image" src="{{ emby.author.icon_url }}" alt="{{ emby.author.name }}">
@@ -71,6 +51,26 @@
             </div>
         </div>
         {% endfor %}
+    {% else %}
+        <div class="message internal hidden">
+            <img class="user-image" src="{{ message.author.avatar.url }}" alt="{{ message.author.name }}">
+            <div class="message-flex">
+                <div class="top-row">
+                    <div class="message-user">{{ message.author.name }}</div>
+                    <div class="timestamp">{{ message.created_at.strftime('%Y-%m-%d %H:%M:%S')}} UTC</div>
+                </div>
+                <div class="bottom-row">
+                    <div class="message-content">{{ message.content }}</div>
+                    {% for attachment in message.attachments %}
+                        {% if 'image' in attachment.content_type %}
+                        <img src="{{ attachment.url }}" alt="{{ attachment.filename }}">
+                        {% else %}
+                        <a href="{{ attachment.url }}">{{ attachment.filename }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     {% endif %}
     {% endif %}
 {% endfor %}

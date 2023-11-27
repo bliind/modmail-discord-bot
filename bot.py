@@ -376,6 +376,8 @@ async def save_channel_log(user, channel):
 
     # log it
     link = f'https://sween.me/modmail/{filename}'
+    if config.env == 'test':
+        link = f'http://localhost:8080/{filename}'
     try:
         first_msg = messages[1].embeds[0].description[:59]
     except:
@@ -556,4 +558,3 @@ async def report_message_command(interaction, message: discord.Message):
 
 
 bot.run(config.token)
-
