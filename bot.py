@@ -202,10 +202,14 @@ tree = app_commands.CommandTree(bot)
 commands = ModmailCommands()
 
 def check_is_allowed(member):
-    role_names = [y.name for y in member.roles]
-    for role in role_names:
-        if role in config.allowed_roles:
-            return True
+    try:
+        role_names = [y.name for y in member.roles]
+        for role in role_names:
+            if role in config.allowed_roles:
+                return True
+    except:
+        pass
+
     return False
 
 def get_member_image(member):
