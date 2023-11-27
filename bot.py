@@ -544,7 +544,7 @@ async def report_message_command(interaction, message: discord.Message):
     await report_view.wait()
     if report_view.value:
         u = report_view.buttonpusher
-        embed.description += f'\n\n✅ {u.mention} ({u.name}) marked this handled'
+        embed.description += f'\n\n✅ {u.mention} ({u.name}) is handling this'
     elif report_view.value == False:
         u = report_view.buttonpusher
         embed.description += f'\n\n❌ {u.mention} ({u.name}) marked this a false report'

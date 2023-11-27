@@ -10,8 +10,8 @@ class ReportView(discord.ui.View):
         for child in self.children:
             child.disabled = True
 
-    @discord.ui.button(label='Handled', style=discord.ButtonStyle.green)
-    async def handled(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label='Handle', style=discord.ButtonStyle.green)
+    async def handle(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
         self.value = True
         self.buttonpusher = interaction.user
