@@ -371,7 +371,7 @@ async def save_channel_log(user, channel):
         f.write(cleaned_output)
 
     # log it
-    link = f'http://localhost:8080/{filename}'
+    link = f'https://sween.me/modmail/{filename}'
     try:
         first_msg = messages[1].embeds[0].description[:59]
     except:
