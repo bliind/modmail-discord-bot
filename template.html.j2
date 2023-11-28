@@ -31,7 +31,7 @@
     {% if not message.content == '@here' %}
     {% if message.embeds and message.embeds[0].type != "image" %}
         {% for emby in message.embeds %}
-        <div class="message{% if emby.footer.text == 'Anonymous Reply' %} anonymous{%endif %}">
+        <div class="message embed{% if emby.footer.text == 'Anonymous Reply' %} anonymous{% endif %}{%if message.author.id != bot_id %} internal hidden{% endif %}">
             <img class="user-image" src="{{ emby.author.icon_url }}" alt="{{ emby.author.name }}">
             <div class="message-flex">
                 <div class="top-row">

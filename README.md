@@ -21,4 +21,10 @@ CREATE TABLE block(
     moderator_id INT,
     reason TEXT
 );
+
+CREATE TABLE sub(
+    id TEXT PRIMARY KEY NOT NULL,
+    ticket_id TEXT,
+    sub_id INT
+);
 ```

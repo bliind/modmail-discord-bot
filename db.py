@@ -177,3 +177,34 @@ def is_blocked(user_id):
     if row:
         return True
     return False
+
+def add_sub(ticket_id, sub_id):
+    try:
+        conn = open_db()
+        cur = conn.cursor()
+        cur.execute('INSERT INTO sub (id, ticket_id, sub_id) VALUES (?, ?, ?)', (str(uuid.uuid4()), ticket_id, sub_id))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print('Failed to add sub:')
+        print(e)
+        return False
+
+def get_subs(ticket_id):
+    conn = open_db()
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM sub WHERE ticket_id = ?', (ticket_id,))
+    results = cur.fetchall()
+    conn.close()
+
+    out = []
+    if results:
+        for result in results:
+            out.append({
+                "id":        result[0],
+                "ticket_id": result[1],
+                "sub_id":    result[2]
+            })
+
+    return out

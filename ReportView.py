@@ -1,10 +1,12 @@
 import discord
 
 class ReportView(discord.ui.View):
-    def __init__(self, timeout):
+    def __init__(self, url, timeout):
         super().__init__(timeout=timeout)
         self.value = None
         self.buttonpusher = None
+        jump_button = discord.ui.Button(label='Jump to Message', style=discord.ButtonStyle.gray, url=url)
+        self.add_item(jump_button)
 
     async def on_timeout(self):
         for child in self.children:

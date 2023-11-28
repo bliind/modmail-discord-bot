@@ -65,6 +65,7 @@ class ModmailCommands:
         firstword = message.content.split(' ')[0]
         content = message.content.replace(firstword, '')
         embed = make_outgoing_embed(message.author, content)
+        embed.color = discord.Color.green()
         user = bot.get_user(ticket['user_id'])
         files = await get_attachments(message)
         try:
@@ -197,6 +198,16 @@ class ModmailCommands:
             embed.description += f'_blocked by <@{block["moderator_id"]}> for {block["reason"]}_\n\n'
 
         await message.reply(embed=embed)
+
+    async def cmd_sub(self, message):
+        ticket = db.get_ticket_by_channel(message.channel.id)
+        if not ticket or ticket['active'] != 1:
+            return
+
+        if db.add_sub(ticket['id'], message.author.id):
+            await message.reply('You will now be pinged for replies to this thread.')
+        else:
+            await message.reply('Failed')
 
 bot = MyClient()
 tree = app_commands.CommandTree(bot)
@@ -369,7 +380,7 @@ async def make_initial_user_embed(user):
 
 async def save_channel_log(user, channel):
     messages = [m async for m in channel.history(oldest_first=True)]
-    output = htmlTemplate.template.render(user=user, messages=messages)
+    output = htmlTemplate.template.render(user=user, messages=messages, bot_id=bot.user.id)
     cleaned_output = re.sub(r'^\s+$\n', '', output, flags=re.MULTILINE)
     filename = f'{user.name}-{timestamp()}.html'
     with open(f'./logs/{filename}', 'w+', encoding="utf-8") as f:
@@ -415,6 +426,8 @@ async def on_message(message):
             if ticket:
                 channel_id = ticket[0]['channel_id']
             else:
+                # check cooldown
+
                 channel_id = await confirm_modmail_creation(message)
             if not channel_id: return
 
@@ -422,6 +435,10 @@ async def on_message(message):
             channel = bot.get_channel(channel_id)
             embed = make_incoming_embed(message.author, message.content, message.id)
             files = await get_attachments(message)
+            subs = db.get_subs(ticket[0]['id'])
+            pings = [f'<@{s["sub_id"]}>' for s in subs]
+            if pings:
+                await channel.send(' '.join(pings))
             await channel.send(embed=embed, files=files)
 
         # if isinstance(message.channel, discord.TextChannel):
@@ -463,7 +480,7 @@ async def on_raw_reaction_add(payload):
 
     ticket = db.get_ticket(payload.user_id)
     if not ticket:
-        print(f'No ticket for f<@{user.id}>')
+        print(f'No ticket for f<@{payload.user_id}>')
         return
 
     user = bot.get_user(ticket['user_id'])
@@ -504,7 +521,6 @@ async def on_message_edit(before, after):
         except:
             continue
 
-
 @tree.context_menu(name='Report Message', guild=discord.Object(id=config.server))
 async def report_message_command(interaction, message: discord.Message):
     modal = ReportModal()
@@ -520,7 +536,7 @@ async def report_message_command(interaction, message: discord.Message):
         Discord ID: `{message.author.id}`
         Account Created: <t:{int(round(message.author.created_at.timestamp()))}>
         Joined Server: <t:{int(round(message.author.joined_at.timestamp()))}>
-    '''
+    '''.replace(' '*8, '')
 
     description += f'''
         **Reported Message's Info:**
@@ -530,15 +546,15 @@ async def report_message_command(interaction, message: discord.Message):
         Attachments: `{len(message.attachments)}`
         Reactions: `{len(message.reactions)}`
         Content: `{message.content}`
-    '''
+    '''.replace(' '*8, '')
 
     description += f'''
         **Report Reason:**
         `{modal.reason.value}`
-    '''
+    '''.replace(' '*8, '')
 
     embed = discord.Embed(
-        color=discord.Color.red(),
+        color=discord.Color.light_gray(),
         description=description,
         timestamp=datetime.datetime.now()
     )
@@ -546,16 +562,17 @@ async def report_message_command(interaction, message: discord.Message):
     embed.set_thumbnail(url=get_member_image(message.author))
 
     report_chan = bot.get_channel(config.report_channel_id)
-    report_view = ReportView(timeout=None)
+    report_view = ReportView(url=message.jump_url, timeout=None)
     report_message = await report_chan.send(bot.mod_role.mention, embed=embed, view=report_view)
     await report_view.wait()
     if report_view.value:
         u = report_view.buttonpusher
         embed.description += f'\n\n✅ {u.mention} ({u.name}) is handling this'
+        embed.color = discord.Color.green()
     elif report_view.value == False:
         u = report_view.buttonpusher
         embed.description += f'\n\n❌ {u.mention} ({u.name}) marked this a false report'
+        embed.color = discord.Color.red()
     await report_message.edit(embed=embed, view=report_view)
-
 
 bot.run(config.token)
