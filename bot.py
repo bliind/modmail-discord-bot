@@ -30,7 +30,7 @@ class HTMLTemplate:
     def __init__(self):
         loader = jinja2.FileSystemLoader(searchpath="./")
         self.env = jinja2.Environment(loader=loader, autoescape=False)
-        self.template = self.env.get_template('template.html.j2')
+        self.template = self.env.get_template('template2.html.j2')
 htmlTemplate = HTMLTemplate()
 
 class MyClient(discord.Client):
@@ -109,8 +109,10 @@ class ModmailCommands:
             return
 
         if keyword != 'silently':
+            ticket_chan = bot.get_channel(ticket['channel_id'])
             embed = make_info_embed('Thread closed', content)
             await user.send(embed=embed)
+            await ticket_chan.send(embed=embed)
 
         # pull all messages, log to html
         await save_channel_log(user, message.channel)
@@ -450,8 +452,12 @@ async def on_message(message):
                 command = f'cmd_{firstword.replace("=", "")}'
                 try:
                     await getattr(commands, command)(message)
+                except AttributeError:
+                    await message.reply(f'Unknown command: {firstword}')
+                    return
                 except Exception as e:
                     print(e)
+                    return
 
 @bot.event
 async def on_raw_member_remove(event):
