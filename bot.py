@@ -45,10 +45,11 @@ class MyClient(discord.Client):
         if not self.synced:
             await tree.sync(guild=discord.Object(id=config.server))
             self.synced = True
+            await self.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="your complaints!"))
 
         print(f"{config.env.upper()} Modmail is ready for duty")
 
-        self.server = [g for g in bot.guilds if g.id == config.server][0]
+        self.server = [g for g in self.guilds if g.id == config.server][0]
         for role in self.server.roles:
             if role.name == config.mod_role:
                 self.mod_role = role
