@@ -54,7 +54,6 @@ class MyClient(discord.Client):
         for role in self.server.roles:
             if role.name == config.mod_role:
                 self.mod_role = role
-                self.mod_role_id = role.id
                 break
 
 class ModmailCommands:
@@ -429,26 +428,29 @@ async def on_message(message):
             if ticket:
                 channel_id = ticket[0]['channel_id']
             else:
-                last_ticket_time = datetime.datetime.fromtimestamp(tickets[-1]['datestamp'])
-                diff = datetime.datetime.now() - last_ticket_time
-                # check cooldown
-                if diff.total_seconds() < config.cooldown:
-                    remain = config.cooldown - diff.total_seconds()
-                    minutes = math.floor(remain / 60)
-                    seconds = math.ceil(remain - (minutes*60))
-                    timestring = ''
-                    if minutes:
-                        timestring += f'{minutes} minute{"s" if minutes > 1 else ""}'
-                    if minutes and seconds: timestring += ', '
-                    if seconds:
-                        timestring += f'{seconds} second{"s" if seconds > 1 else ""}'
-                    cd_embed = make_info_embed(
-                        'Modmail Cooldown',
-                        f'You\'ve recently had a modmail. You can open a new one in {timestring}'
-                    )
-                    await message.channel.send(embed=cd_embed)
-                    return
-                else:
+                try:
+                    last_ticket_time = datetime.datetime.fromtimestamp(tickets[-1]['datestamp'])
+                    diff = datetime.datetime.now() - last_ticket_time
+                    # check cooldown
+                    if diff.total_seconds() < config.cooldown:
+                        remain = config.cooldown - diff.total_seconds()
+                        minutes = math.floor(remain / 60)
+                        seconds = math.ceil(remain - (minutes*60))
+                        timestring = ''
+                        if minutes:
+                            timestring += f'{minutes} minute{"s" if minutes > 1 else ""}'
+                        if minutes and seconds: timestring += ', '
+                        if seconds:
+                            timestring += f'{seconds} second{"s" if seconds > 1 else ""}'
+                        cd_embed = make_info_embed(
+                            'Modmail Cooldown',
+                            f'You\'ve recently had a modmail. You can open a new one in {timestring}'
+                        )
+                        await message.channel.send(embed=cd_embed)
+                        return
+                    else:
+                        channel_id = await confirm_modmail_creation(message)
+                except:
                     channel_id = await confirm_modmail_creation(message)
 
             if not channel_id: return
