@@ -114,11 +114,14 @@ class ModmailCommands:
         if keyword != 'silently':
             ticket_chan = bot.get_channel(ticket['channel_id'])
             embed = make_info_embed('Thread closed', content)
+            files = await get_attachments(message)
+            sent = False
             try:
-                await user.send(embed=embed)
+                sent = await user.send(embed=embed, files=files)
             except:
                 embed.description += '\n\n_Could not DM user_'
-            await ticket_chan.send(embed=embed)
+            if sent: files = await get_attachments(sent)
+            await ticket_chan.send(embed=embed, files=files)
 
         # pull all messages, log to html
         await save_channel_log(user, message.channel)
@@ -533,6 +536,8 @@ async def on_raw_reaction_add(payload):
         # close ticket
         last_msg = make_info_embed('Thread closed', 'Closed by recipient')
         await chan.send(embed=last_msg)
+        user_msg = make_info_embed('Thread closed', 'Thanks for reaching out the Modmail!')
+        await user.send(embed=user_msg)
         # pull all messages, log to html
         await save_channel_log(user, chan)
 
