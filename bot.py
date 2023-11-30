@@ -1,6 +1,7 @@
 import discord
 import json
 import os
+import io
 import datetime
 import db
 import re
@@ -69,11 +70,12 @@ class ModmailCommands:
         user = bot.get_user(ticket['user_id'])
         files = await get_attachments(message)
         try:
-            await user.send(embed=embed, files=files)
+            sent = await user.send(embed=embed, files=files)
         except:
             await message.reply('Could not DM User')
             return
-        await message.channel.send(embed=embed, files=files)
+        newfiles = await get_attachments(sent)
+        await message.channel.send(embed=embed, files=newfiles)
         await message.delete()
 
     async def cmd_areply(self, message):
@@ -88,11 +90,12 @@ class ModmailCommands:
         user = bot.get_user(ticket['user_id'])
         files = await get_attachments(message)
         try:
-            await user.send(embed=outgoing, files=files)
+            sent = await user.send(embed=outgoing, files=files)
         except:
             await message.reply('Could not DM User')
             return
-        await message.channel.send(embed=internal, files=files)
+        newfiles = await get_attachments(sent)
+        await message.channel.send(embed=internal, files=newfiles)
         await message.delete()
 
     async def cmd_close(self, message):
@@ -111,7 +114,10 @@ class ModmailCommands:
         if keyword != 'silently':
             ticket_chan = bot.get_channel(ticket['channel_id'])
             embed = make_info_embed('Thread closed', content)
-            await user.send(embed=embed)
+            try:
+                await user.send(embed=embed)
+            except:
+                embed.description += '\n\n_Could not DM user_'
             await ticket_chan.send(embed=embed)
 
         # pull all messages, log to html
@@ -239,6 +245,9 @@ def get_member_image(member):
         return member.avatar.url
     except:
         return None
+
+def clean_name(name):
+    return name.replace('`', '\\`').replace('_', '\\_').replace('*', '\\*')
 
 def get_member_name(member):
     try: 
@@ -411,7 +420,14 @@ async def save_channel_log(user, channel):
 async def get_attachments(message):
     files = []
     for file in message.attachments:
-        files.append(await file.to_file(spoiler=file.is_spoiler()))
+        with io.BytesIO() as image_binary:
+            await file.save(image_binary)
+            image_binary.seek(0)
+            files.append(discord.File(
+                image_binary,
+                filename=file.filename,
+                spoiler=file.is_spoiler()
+            ))
 
     return files
 
@@ -560,7 +576,7 @@ async def report_message_command(interaction, message: discord.Message):
 
     description += f'''\n
         **Reported User's Info:**
-        Discord Tag: `{message.author.name}`
+        Discord Tag: `{clean_name(message.author.name)}`
         Discord ID: `{message.author.id}`
         Account Created: <t:{int(round(message.author.created_at.timestamp()))}>
         Joined Server: <t:{int(round(message.author.joined_at.timestamp()))}>

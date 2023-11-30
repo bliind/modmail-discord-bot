@@ -10,7 +10,8 @@ class ReportView(discord.ui.View):
 
     async def on_timeout(self):
         for child in self.children:
-            child.disabled = True
+            if child.label != 'Jump to Message':
+                child.disabled = True
 
     @discord.ui.button(label='Handle', style=discord.ButtonStyle.green)
     async def handle(self, interaction: discord.Interaction, button: discord.ui.Button):
