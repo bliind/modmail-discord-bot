@@ -120,7 +120,9 @@ class ModmailCommands:
                 sent = await user.send(embed=embed, files=files)
             except:
                 embed.description += '\n\n_Could not DM user_'
+
             if sent: files = await get_attachments(sent)
+            embed.set_author(name=get_member_name(message.author), icon_url=get_member_image(message.author))
             await ticket_chan.send(embed=embed, files=files)
 
         # pull all messages, log to html
@@ -404,19 +406,27 @@ async def save_channel_log(user, channel):
     link = f'https://sween.me/modmail/{filename}'
     if config.env == 'test':
         link = f'http://localhost:8080/{filename}'
+
     try:
         first_msg = messages[1].embeds[0].description[:59]
+        if len(messages[1].embeds[0].description) > 59:
+            first_msg += '...'
+    except: first_msg = 'Modmail log'
+
+    try:
+        try:
+            closer = messages[-1].embeds[0].author.name
+        except:
+            closer = get_member_name(messages[-1].author)
     except:
-        first_msg = 'Modmail log'
-    closer = messages[-1].author
-    if closer.id == bot.user.id:
-        closer = dotdict({"name": "Recipient", "id": user.id})
+        closer = 'Unknown'
+    if closer == get_member_name(bot.user): closer = 'Recipient'
 
     log = make_info_embed(
         f'{user.name} (`{user.id}`)',
         f'[Web Log]({link}): {first_msg}'
     )
-    log.set_footer(text=f'Closed by {closer.name} ({closer.id})')
+    log.set_footer(text=f'Closed by {closer}')
     log_chan = bot.get_channel(config.ticket_log_id)
     await log_chan.send(embed=log)
 
