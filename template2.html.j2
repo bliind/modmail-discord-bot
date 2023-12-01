@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modmail Log</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
     <script>
         function internalToggle() {
             document.querySelectorAll('.internal').forEach(msg => msg.classList.toggle('hidden'))
@@ -54,10 +54,26 @@
         {% endfor %}
         {% else %}
         <div class="message internal hidden">
-            <img class="user-image" src="{{ message.author.avatar.url }}" alt="{{ message.author.name }}">
+            {% if message.author.guild_avatar.url %}
+                {% set avatar_url = message.author.guild_avatar.url %}
+            {% elif message.author.display_avatar.url %}
+                {% set avatar_url = message.author.display_avatar.url %}
+            {% else %}
+                {% set avatar_url = message.author.avatar.url %}
+            {% endif %}
+            {% if message.author.nick %}
+                {% set author_name = message.author.nick %}
+            {% elif message.author.display_name %}
+                {% set author_name = message.author.display_name %}
+            {% elif message.author.global_name %}
+                {% set author_name = message.author.global_name %}
+            {% else %}
+                {% set author_name = message.author.name %}
+            {% endif %}
+            <img class="user-image" src="{{ avatar_url }}" alt="{{ author_name }}">
             <div class="message-flex">
                 <div class="top-row">
-                    <div class="message-user">{{ message.author.name }}</div>
+                    <div class="message-user">{{ author_name }}</div>
                     <div class="timestamp">{{ message.created_at.strftime('%Y-%m-%d %H:%M:%S')}} UTC</div>
                 </div>
                 <div class="bottom-row">
@@ -75,10 +91,26 @@
         {% endif %}
     {% else %}
         <div class="message internal hidden">
-            <img class="user-image" src="{{ message.author.avatar.url }}" alt="{{ message.author.name }}">
+            {% if message.author.guild_avatar.url %}
+                {% set avatar_url = message.author.guild_avatar.url %}
+            {% elif message.author.display_avatar.url %}
+                {% set avatar_url = message.author.display_avatar.url %}
+            {% else %}
+                {% set avatar_url = message.author.avatar.url %}
+            {% endif %}
+            {% if message.author.nick %}
+                {% set author_name = message.author.nick %}
+            {% elif message.author.display_name %}
+                {% set author_name = message.author.display_name %}
+            {% elif message.author.global_name %}
+                {% set author_name = message.author.global_name %}
+            {% else %}
+                {% set author_name = message.author.name %}
+            {% endif %}
+            <img class="user-image" src="{{ avatar_url }}" alt="{{ author_name }}">
             <div class="message-flex">
                 <div class="top-row">
-                    <div class="message-user">{{ message.author.name }}</div>
+                    <div class="message-user">{{ author_name }}</div>
                     <div class="timestamp">{{ message.created_at.strftime('%Y-%m-%d %H:%M:%S')}} UTC</div>
                 </div>
                 <div class="bottom-row">
