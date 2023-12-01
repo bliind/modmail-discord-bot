@@ -579,12 +579,17 @@ async def report_message_command(interaction, message: discord.Message):
     description += f'has reported [this message]({message.jump_url}) from '
     description += f'{message.author.mention} ({message.author.name})!'
 
+    try:
+        joined_at = f'<t:{int(round(message.author.joined_at.timestamp()))}>'
+    except:
+        joined_at = 'No Longer On Server'
+
     description += f'''\n
         **Reported User's Info:**
         Discord Tag: `{clean_name(message.author.name)}`
         Discord ID: `{message.author.id}`
         Account Created: <t:{int(round(message.author.created_at.timestamp()))}>
-        Joined Server: <t:{int(round(message.author.joined_at.timestamp()))}>
+        Joined Server: {joined_at}
     '''.replace(' '*8, '')
 
     description += f'''

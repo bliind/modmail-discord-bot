@@ -43,9 +43,9 @@
                     <div class="message-content">{{ emby.description }}</div>
                     {% for attachment in message.attachments %}
                         {% if 'image' in attachment.content_type %}
-                        <img src="{{ attachment.url }}" alt="{{ attachment.filename }}">
+                        <img src="{{ attachment.proxy_url }}" alt="{{ attachment.filename }}">
                         {% else %}
-                        <a href="{{ attachment.url }}">{{ attachment.filename }}</a>
+                        <a href="{{ attachment.proxy_url }}">{{ attachment.filename }}</a>
                         {% endif %}
                     {% endfor %}
                 </div>
@@ -64,9 +64,9 @@
                     <div class="message-content">{{ message.content }}</div>
                     {% for attachment in message.attachments %}
                         {% if 'image' in attachment.content_type %}
-                        <img src="{{ attachment.url }}" alt="{{ attachment.filename }}">
+                        <img src="{{ attachment.proxy_url }}" alt="{{ attachment.filename }}">
                         {% else %}
-                        <a href="{{ attachment.url }}">{{ attachment.filename }}</a>
+                        <a href="{{ attachment.proxy_url }}">{{ attachment.filename }}</a>
                         {% endif %}
                     {% endfor %}
                 </div>
@@ -85,9 +85,9 @@
                     <div class="message-content">{{ message.content }}</div>
                     {% for attachment in message.attachments %}
                         {% if 'image' in attachment.content_type %}
-                        <img src="{{ attachment.url }}" alt="{{ attachment.filename }}">
+                        <img src="{{ attachment.proxy_url }}" alt="{{ attachment.filename }}">
                         {% else %}
-                        <a href="{{ attachment.url }}">{{ attachment.filename }}</a>
+                        <a href="{{ attachment.proxy_url }}">{{ attachment.filename }}</a>
                         {% endif %}
                     {% endfor %}
                 </div>
