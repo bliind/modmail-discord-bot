@@ -627,7 +627,8 @@ async def report_message_command(interaction, message: discord.Message):
 
     report_chan = bot.get_channel(config.report_channel_id)
     report_view = ReportView(url=message.jump_url, timeout=None)
-    report_message = await report_chan.send(bot.mod_role.mention, embed=embed, view=report_view)
+    files = await get_attachments(message)
+    report_message = await report_chan.send(bot.mod_role.mention, embed=embed, view=report_view, files=files)
     await report_view.wait()
     if report_view.value:
         u = report_view.buttonpusher
