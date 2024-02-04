@@ -150,9 +150,14 @@ class ModmailCommands:
         db.close_ticket(ticket['id'])
 
     async def cmd_contact(self, message):
-        try: user_id = int(message.content.split(' ')[1])
+        arg = message.content.split(' ')[1]
+        try: user_id = int(arg)
         except:
-            await message.reply('=contact UserID')
+            try:
+                user_id = int(arg.replace('<@', '').replace('>', ''))
+            except:
+                await message.reply('=contact UserID or =contact @UserMention')
+                return
 
         ticket = db.get_ticket(user_id)
         if ticket:
@@ -166,7 +171,7 @@ class ModmailCommands:
             "id": 0,
             "attachments": []
         })
-        channel_id = await create_ticket(new_message)
+        channel_id = await create_ticket(new_message, contacted=True)
         await message.reply(f'Ticket opened: <#{channel_id}>')
         remainder = ' '.join(message.content.split(' ')[2:])
         if remainder:
@@ -359,13 +364,14 @@ async def confirm_modmail_creation(message):
         sent = await message.channel.send(embed=reply)
         await sent.add_reaction('🚪')
 
-async def create_ticket(message):
+async def create_ticket(message, contacted=False):
     # create the channel
     channel_id = await create_ticket_channel(message.author.name)
     # initial message to channel
     modmail_open = await make_initial_user_embed(message.author)
     channel = bot.get_channel(channel_id)
-    await channel.send('@here', embed=modmail_open)
+    content = '@here' if not contacted else ''
+    await channel.send(content=content, embed=modmail_open)
     if message.id != 0:
         initial_message = make_incoming_embed(message.author, message.content, message.id)
         files = await get_attachments(message)
@@ -385,7 +391,8 @@ async def make_initial_user_embed(user):
         description = f'{member.mention} was created <t:{created}:R>, joined <t:{joined}:R>, with {count} past threads.\n\n'
         description += '**Roles**\n'
         for role in member.roles:
-            description += f'{role.mention} '
+            if role.name != '@everyone':
+                description += f'{role.mention} '
     else:
         description = f'{member.mention} was created <t:{created}:R>, is not on the server, with {count} past threads.\n\n'
 
@@ -395,7 +402,7 @@ async def make_initial_user_embed(user):
     return embed
 
 async def save_channel_log(user, channel):
-    messages = [m async for m in channel.history(oldest_first=True)]
+    messages = [m async for m in channel.history(limit=1000, oldest_first=True)]
     output = htmlTemplate.template.render(user=user, messages=messages, bot_id=bot.user.id)
     cleaned_output = re.sub(r'^\s+$\n', '', output, flags=re.MULTILINE)
     filename = f'{user.name}-{timestamp()}.html'
