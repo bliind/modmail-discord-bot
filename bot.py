@@ -535,11 +535,27 @@ async def on_member_join(member):
         channel = bot.get_channel(ticket['channel_id'])
         await channel.send(embed=embed)
 
+async def emoji_report(payload):
+    chan = bot.get_channel(payload.channel_id)
+    message = await chan.fetch_message(payload.message_id)
+
+    for reaction in message.reactions:
+        if str(reaction.emoji) == config.report_emoji:
+            if reaction.count > 1:
+                # already reported
+                return
+            break
+
+    reporter = await bot.fetch_user(payload.user_id)
+    await send_report(reporter, message)
+
 @bot.event
 async def on_raw_reaction_add(payload):
     if payload.user_id == bot.user.id:
         return
     if payload.guild_id:
+        if str(payload.emoji) == config.report_emoji:
+            await emoji_report(payload)
         return
 
     ticket = db.get_ticket(payload.user_id)
@@ -592,7 +608,12 @@ async def report_message_command(interaction, message: discord.Message):
     modal = ReportModal()
     await interaction.response.send_modal(modal)
     await modal.wait()
-    description = f'{interaction.user.mention} ({interaction.user.name}) '
+
+    await send_report(interaction.user, message, modal.reason.value)
+
+
+async def send_report(reporter, message, reason = None):
+    description = f'{reporter.mention} ({reporter.name}) '
     description += f'has reported [this message]({message.jump_url}) from '
     description += f'{message.author.mention} ({message.author.name})!'
 
@@ -619,17 +640,18 @@ async def report_message_command(interaction, message: discord.Message):
         Content: `{message.content}`
     '''.replace(' '*8, '')
 
-    description += f'''
-        **Report Reason:**
-        `{modal.reason.value}`
-    '''.replace(' '*8, '')
+    if reason:
+        description += f'''
+            **Report Reason:**
+            `{reason}`
+        '''.replace(' '*8, '')
 
     embed = discord.Embed(
         color=discord.Color.light_gray(),
         description=description,
         timestamp=datetime.datetime.now()
     )
-    embed.set_author(name='Message Report Received', icon_url=get_member_image(interaction.user))
+    embed.set_author(name='Message Report Received', icon_url=get_member_image(reporter))
     embed.set_thumbnail(url=get_member_image(message.author))
 
     report_chan = bot.get_channel(config.report_channel_id)
@@ -646,5 +668,7 @@ async def report_message_command(interaction, message: discord.Message):
         embed.description += f'\n\n❌ {u.mention} ({u.name}) marked this a false report'
         embed.color = discord.Color.red()
     await report_message.edit(embed=embed, view=report_view)
+
+
 
 bot.run(config.token)

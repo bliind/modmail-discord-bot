@@ -7,5 +7,6 @@
     "category_id": 0,
     "ticket_log_id": 0,
     "report_channel_id": 0,
-    "cooldown": 0
+    "cooldown": 0,
+    "report_emoji": ""
 }
