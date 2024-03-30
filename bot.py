@@ -541,7 +541,7 @@ async def emoji_report(payload):
     message = await chan.fetch_message(payload.message_id)
     reporter = await bot.fetch_user(payload.user_id)
 
-    await message.remove_reaction(str(payload.emoji), reporter)
+    await message.remove_reaction(payload.emoji.name, reporter)
 
     await send_report(reporter, message)
 
