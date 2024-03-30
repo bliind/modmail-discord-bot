@@ -535,18 +535,14 @@ async def on_member_join(member):
         channel = bot.get_channel(ticket['channel_id'])
         await channel.send(embed=embed)
 
+## report via emoji
 async def emoji_report(payload):
     chan = bot.get_channel(payload.channel_id)
     message = await chan.fetch_message(payload.message_id)
-
-    for reaction in message.reactions:
-        if str(reaction.emoji) == config.report_emoji:
-            if reaction.count > 1:
-                # already reported
-                return
-            break
-
     reporter = await bot.fetch_user(payload.user_id)
+
+    await message.remove_reaction(str(payload.emoji), reporter)
+
     await send_report(reporter, message)
 
 @bot.event
@@ -611,7 +607,7 @@ async def report_message_command(interaction, message: discord.Message):
 
     await send_report(interaction.user, message, modal.reason.value)
 
-
+## send the report to the report channel
 async def send_report(reporter, message, reason = None):
     description = f'{reporter.mention} ({reporter.name}) '
     description += f'has reported [this message]({message.jump_url}) from '
