@@ -29,11 +29,10 @@ env = os.getenv('MODMAIL_ENV')
 load_config()
 
 class HTMLTemplate:
-    def __init__(self):
+    def __init__(self, template = 'template2'):
         loader = jinja2.FileSystemLoader(searchpath="./")
         self.env = jinja2.Environment(loader=loader, autoescape=False)
-        self.template = self.env.get_template('template2.html.j2')
-htmlTemplate = HTMLTemplate()
+        self.template = self.env.get_template(f'{template}.html.j2')
 
 class MyClient(discord.Client):
     def __init__(self):
@@ -401,13 +400,74 @@ async def make_initial_user_embed(user):
 
     return embed
 
-async def save_channel_log(user, channel):
+def clean_output(output):
+    return re.sub(r'^\s+$\n', '', output, flags=re.MULTILINE)
+
+async def start_log(user):
+    template = HTMLTemplate('templates/top')
+    output = template.template.render(user=user)
+    filename = f'{user.name}-{timestamp()}.html'
+
+    with open(f'./logs/{filename}', 'w', encoding="utf-8") as f:
+        f.write(clean_output(output))
+
+    return filename
+
+async def log_message(filename, message):
+    template = None
+    if message.author.id == bot.id and message.embeds:
+        template = HTMLTemplate('templates/public_message')
+    else:
+        template = HTMLTemplate('templates/internal_message')
+
+    if template:
+        output = template.template.render(message=message)
+        with open(f'./logs/{filename}', 'a', encoding="utf-8") as f:
+            f.write('\n' + clean_output(output))
+
+async def end_log(filename):
+    template = HTMLTemplate('templates/end')
+    output = template.template.render()
+    with open(f'./logs/{filename}', 'a', encoding="utf-8") as f:
+        f.write('\n' + clean_output(output))
+
+async def post_log_link(filename, user, channel):
+    # log it
+    link = f'https://sween.me/modmail/{filename}'
+    if config.env == 'test':
+        link = f'http://localhost:8080/{filename}'
+
     messages = [m async for m in channel.history(limit=1000, oldest_first=True)]
-    output = htmlTemplate.template.render(user=user, messages=messages, bot_id=bot.user.id)
-    cleaned_output = re.sub(r'^\s+$\n', '', output, flags=re.MULTILINE)
+    try:
+        first_msg = messages[1].embeds[0].description[:59]
+        if len(messages[1].embeds[0].description) > 59:
+            first_msg += '...'
+    except: first_msg = 'Modmail log'
+
+    try:
+        try:
+            closer = messages[-1].embeds[0].author.name
+        except:
+            closer = get_member_name(messages[-1].author)
+    except:
+        closer = 'Unknown'
+    if closer == get_member_name(bot.user): closer = 'Recipient'
+
+    log = make_info_embed(
+        f'{user.name} (`{user.id}`)',
+        f'[Web Log]({link}): {first_msg}'
+    )
+    log.set_footer(text=f'Closed by {closer}')
+    log_chan = bot.get_channel(config.ticket_log_id)
+    await log_chan.send(embed=log)
+
+async def save_channel_log(user, channel):
+    template = HTMLTemplate('template2')
+    messages = [m async for m in channel.history(limit=1000, oldest_first=True)]
+    output = template.template.render(user=user, messages=messages, bot_id=bot.user.id)
     filename = f'{user.name}-{timestamp()}.html'
     with open(f'./logs/{filename}', 'w+', encoding="utf-8") as f:
-        f.write(cleaned_output)
+        f.write(clean_output(output))
 
     # log it
     link = f'https://sween.me/modmail/{filename}'
