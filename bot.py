@@ -559,7 +559,8 @@ async def on_raw_reaction_add(payload):
         return
     if payload.guild_id:
         if str(payload.emoji) == config.report_emoji:
-            await emoji_report(payload)
+            if payload.channel_id not in config.no_report_channels:
+                await emoji_report(payload)
         return
 
     ticket = db.get_ticket(payload.user_id)

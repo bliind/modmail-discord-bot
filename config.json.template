@@ -8,5 +8,6 @@
     "ticket_log_id": 0,
     "report_channel_id": 0,
     "cooldown": 0,
-    "report_emoji": ""
+    "report_emoji": "",
+    "no_report_channels": []
 }
