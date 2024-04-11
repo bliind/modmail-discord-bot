@@ -541,9 +541,15 @@ async def emoji_report(payload):
     message = await chan.fetch_message(payload.message_id)
     reporter = await bot.fetch_user(payload.user_id)
 
+    # remove react
     await message.remove_reaction(payload.emoji.name, reporter)
-
+    # send report to report channel
     await send_report(reporter, message)
+    # send DM to reporter
+    description = f'Your report has been sent to the moderators!\n\nWe appreciate your efforts towards keeping the server clean!'
+    embed = make_embed('blurple', description=description)
+    embed.set_author(name='Message Reported', icon_url=bot.server.icon.url)
+    await reporter.send(embed=embed)
 
 @bot.event
 async def on_raw_reaction_add(payload):
