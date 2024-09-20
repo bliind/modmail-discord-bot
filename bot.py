@@ -47,7 +47,7 @@ class MyClient(discord.Client):
         if not self.synced:
             await tree.sync(guild=discord.Object(id=config.server))
             self.synced = True
-            await self.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="your complaints!"))
+            await self.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="discord problems!"))
 
         print(f"{config.env.upper()} Modmail is ready for duty")
 
@@ -618,9 +618,9 @@ async def report_message_command(interaction, message: discord.Message):
 
 ## send the report to the report channel
 async def send_report(reporter, message, reason = None):
-    description = f'{reporter.mention} ({reporter.name}) '
+    description = f'{reporter.mention} ({clean_name(reporter.name)}) '
     description += f'has reported [this message]({message.jump_url}) from '
-    description += f'{message.author.mention} ({message.author.name})!'
+    description += f'{message.author.mention} ({clean_name(message.author.name)})!'
 
     try:
         joined_at = f'<t:{int(round(message.author.joined_at.timestamp()))}>'
