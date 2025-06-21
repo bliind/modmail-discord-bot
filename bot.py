@@ -52,10 +52,6 @@ class MyClient(discord.Client):
         print(f"{config.env.upper()} Modmail is ready for duty")
 
         self.server = [g for g in self.guilds if g.id == config.server][0]
-        for role in self.server.roles:
-            if role.name == config.mod_role:
-                self.mod_role = role
-                break
 
 class ModmailCommands:
     async def cmd_reply(self, message):
@@ -227,15 +223,101 @@ class ModmailCommands:
         else:
             await message.reply('Failed')
 
+    async def cmd_appeal(self, message):
+        ticket = db.get_ticket_by_channel(message.channel.id)
+        if not ticket or ticket['active'] != 1:
+            return
+
+        content = '''
+            Hi there,
+
+            We don't discuss bans over modmail for any users. If you believe your ban was a mistake or you'd like to appeal, please use our official appeal form:
+            👉 https://appeal.gg/MARVELSNAP
+
+            Appeals submitted through that form are reviewed by the appropriate team. Modmail cannot assist with ban decisions.
+
+            Thanks for your understanding.
+        '''.replace(' '*12, '').strip()
+
+        outgoing = make_outgoing_embed(bot.user, content, anonymous=True)
+        internal = make_internal_embed(message.author, content, anonymous=True)
+        user = bot.get_user(ticket['user_id'])
+        try:
+            await user.send(embed=outgoing)
+        except:
+            await message.reply('Could not DM User')
+            return
+        await message.channel.send(embed=internal)
+        await message.delete()
+
+    async def cmd_support(self, message):
+        ticket = db.get_ticket_by_channel(message.channel.id)
+        if not ticket or ticket['active'] != 1:
+            return
+
+        content = '''
+            Hi!
+
+            For any in-game issues, questions about your account, or technical problems, please use one of the official support channels:
+
+            🛠️ In-Game Support Portal: https://marvelsnap.helpshift.com/hc/en/3-marvel-snap/contact-us/
+            💬 Community Help Channel (Discord): https://discord.com/channels/978545345715908668/1020475179085865000
+
+            Our modmail team isn't able to assist with in-game issues directly, but the support team and community there will be happy to help!
+        '''.replace(' '*12, '').strip()
+
+        outgoing = make_outgoing_embed(bot.user, content, anonymous=True)
+        internal = make_internal_embed(message.author, content, anonymous=True)
+        user = bot.get_user(ticket['user_id'])
+        try:
+            await user.send(embed=outgoing)
+        except:
+            await message.reply('Could not DM User')
+            return
+        await message.channel.send(embed=internal)
+        await message.delete()
+
+    async def cmd_help(self, message):
+        ticket = db.get_ticket_by_channel(message.channel.id)
+        if not ticket or ticket['active'] != 1:
+            return
+
+        content = '''
+            ### `=reply <message>`
+                Sends a message to the user with your name, avatar, and role visible
+            ### `=areply <message>`
+                Sends a message to the user from "SNAP Modmail"
+            ### `=close <message>`
+                Closes the ticket with a final response to the user
+            ### `=closes`
+                Closes the ticket without a response to the user
+            ### `=sub`
+                Subscribes to the ticket so you will get pings for replies
+            ### `=appeal`
+                Sends the Ban Appeal template message to the user
+            ### `=support`
+                Sends the Support template message to the user
+            ---
+            ### `=block <userID>`
+                Blocks the specified user from contacting modmail
+            ### `=unblock <userID>`
+                Unblocks the specified user from contacting modmail
+            ### `=contact <userID>`
+                Creates a ticket to communicate out to a user
+        '''.replace(' '*12, '').strip()
+        embed = discord.Embed(title='Available Commands', color=discord.Color.blue(), description=content)
+        await message.channel.send(embed=embed)
+        await message.delete()
+
 bot = MyClient()
 tree = app_commands.CommandTree(bot)
 commands = ModmailCommands()
 
 def check_is_allowed(member):
     try:
-        role_names = [y.name for y in member.roles]
-        for role in role_names:
-            if role in config.allowed_roles:
+        roles = [r.id for r in member.roles]
+        for role in roles:
+            if role in config.modmail_allowed_roles:
                 return True
     except:
         pass
@@ -334,8 +416,9 @@ async def create_ticket_channel(user_name):
     server = [g for g in bot.guilds if g.id == config.server][0]
     overwrites = {
         server.default_role: discord.PermissionOverwrite(read_messages=False),
-        server.get_role(bot.mod_role.id): discord.PermissionOverwrite(read_messages=True)
     }
+    for role_id in config.modmail_ticket_roles:
+        overwrites[server.get_role(role_id)] = discord.PermissionOverwrite(read_messages=True)
 
     category = [c for c in server.categories if c.id == config.category_id][0]
     channel = await category.create_text_channel(user_name, overwrites=overwrites)
@@ -370,7 +453,8 @@ async def create_ticket(message, contacted=False):
     # initial message to channel
     modmail_open = await make_initial_user_embed(message.author)
     channel = bot.get_channel(channel_id)
-    content = '@here' if not contacted else ''
+    mod_pings = ' '.join([f'<@&{role_id}>' for role_id in config.modmail_ticket_roles])
+    content = mod_pings if not contacted else ''
     await channel.send(content=content, embed=modmail_open)
     if message.id != 0:
         initial_message = make_incoming_embed(message.author, message.content, message.id)
@@ -662,7 +746,9 @@ async def send_report(reporter, message, reason = None):
     report_chan = bot.get_channel(config.report_channel_id)
     report_view = ReportView(url=message.jump_url, timeout=None)
     files = await get_attachments(message)
-    report_message = await report_chan.send(bot.mod_role.mention, embed=embed, view=report_view, files=files)
+
+    message = ' '.join([f'<@&{role_id}>' for role_id in config.modmail_ticket_roles])
+    report_message = await report_chan.send(message, embed=embed, view=report_view, files=files)
     await report_view.wait()
     if report_view.value:
         u = report_view.buttonpusher
