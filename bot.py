@@ -342,7 +342,7 @@ def clean_name(name):
     return name.replace('`', '\\`').replace('_', '\\_').replace('*', '\\*')
 
 def get_member_name(member):
-    try: 
+    try:
         if member.nick: return member.nick
     except: pass
     try:
@@ -629,7 +629,7 @@ async def emoji_report(payload):
     await message.remove_reaction(payload.emoji.name, reporter)
 
     # send DM to reporter
-    description = f'Your report has been sent to the moderators!\n\nWe appreciate your efforts towards keeping the server clean!'
+    description = 'Your report has been sent to the moderators!\n\nWe appreciate your efforts towards keeping the server clean!'
     embed = make_embed('blurple', description=description)
     embed.set_author(name='Message Reported', icon_url=bot.server.icon.url)
     await reporter.send(embed=embed)
@@ -743,12 +743,29 @@ async def send_report(reporter, message, reason = None):
     embed.set_author(name='Message Report Received', icon_url=get_member_image(reporter))
     embed.set_thumbnail(url=get_member_image(message.author))
 
-    report_chan = bot.get_channel(config.report_channel_id)
     report_view = ReportView(url=message.jump_url, timeout=None)
     files = await get_attachments(message)
 
-    message = ' '.join([f'<@&{role_id}>' for role_id in config.modmail_ticket_roles])
-    report_message = await report_chan.send(message, embed=embed, view=report_view, files=files)
+    category_id = message.channel.category.id
+    channel_id = message.channel.id
+    if message.channel.type == discord.ChannelType.public_thread:
+        channel_id = message.channel.parent.id
+
+    use_override = None
+    for override in config['report_overrides']:
+        if (override['type'] == 'category' and override['target_id'] == category_id) \
+        or (override['type'] == 'channel' and override['target_id'] == channel_id):
+            use_override = override
+            break
+
+    if use_override:
+        report_chan = bot.get_channel(use_override['report_channel'])
+        msg_content = ' '.join([f'<@&{role_id}>' for role_id in use_override['ping_roles']])
+    else:
+        report_chan = bot.get_channel(config.report_channel_id)
+        msg_content = ' '.join([f'<@&{role_id}>' for role_id in config.modmail_ticket_roles])
+
+    report_message = await report_chan.send(msg_content, embed=embed, view=report_view, files=files)
     await report_view.wait()
     if report_view.value:
         u = report_view.buttonpusher
