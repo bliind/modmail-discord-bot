@@ -416,6 +416,7 @@ async def create_ticket_channel(user_name):
     server = [g for g in bot.guilds if g.id == config.server][0]
     overwrites = {
         server.default_role: discord.PermissionOverwrite(read_messages=False),
+        server.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
     }
     for role_id in config.modmail_ticket_roles:
         overwrites[server.get_role(role_id)] = discord.PermissionOverwrite(read_messages=True)
